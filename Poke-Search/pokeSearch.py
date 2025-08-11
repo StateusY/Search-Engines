@@ -7,8 +7,8 @@ sortBasedOnIndex = False
 sortBasedOnStats = False
 outputLength = 10
 
-numStats = np.genfromtxt("pokemon.csv", dtype = (int), delimiter = ",", usecols=(0, 4, 5, 6, 7, 8, 9, 10, 11))
-strStats = np.genfromtxt("pokemon.csv", dtype = (str), delimiter = ",", usecols=(1, 2, 3, 12))
+numStats = np.genfromtxt("Poke-Search/pokemon.csv", dtype = (int), delimiter = ",", usecols=(0, 4, 5, 6, 7, 8, 9, 10, 11))
+strStats = np.genfromtxt("Poke-Search/pokemon.csv", dtype = (str), delimiter = ",", usecols=(1, 2, 3, 12))
 
 CSVStats = []
 
@@ -29,14 +29,25 @@ for i in range(len(numStats)):
     tempArray.append(str(strStats[i][3]))
     CSVStats.append(tempArray)
 
+avgMag = 0
+for pokemon in CSVStats:
+    avgMag += np.linalg.norm(pokemon[5:11])
+avgMag /= len(CSVStats)
+
 comparisonArray = []
 
 def statComparer(v1,v2):
     v1 = np.array(v1)
     v2 = np.array(v2)
-    return (np.dot(v1/np.linalg.norm(v1), v2/np.linalg.norm(v2))) #/ (np.linalg.norm([v1,v2]) + 1)
+    m1 = np.linalg.norm(v1)
+    m2 = np.linalg.norm(v2)
+    v1Adjusted = v1 / m1
+    v2Adjusted = v2 / m2
 
-# pokecomp -v -H --name --stat
+    return np.dot(v1Adjusted, v2Adjusted) / (np.linalg.norm(v1-v2) / avgMag + 1)
+
+
+#print(statComparer([1,1,1],[1,1,1]))
 
 user_input = input(">")
 
@@ -81,8 +92,11 @@ if isHelping:
     print("-v         : Verbose\n--help  -H : Help\n--name  -N : Search by Pokemon Name\n--index -I : Search by Pokemon Index\n--stat  -S : Search by Set of Stats\n--output -O : Set number of outputs")
 
 if sortBasedOnName:
+    searchName = searchName.lower()
+    #searchNameArray = searchName.split("")
+    #print(searchNameArray)
     for i in range(len(CSVStats)):
-        if CSVStats[i][1].lower() == searchName.lower():
+        if CSVStats[i][1].lower() == searchName:
             comparisonArray = CSVStats[i][5:11]
             break
     if comparisonArray == []:
@@ -108,9 +122,13 @@ for i in range(len(CSVStats)):
     comparedStatsArray.append((CSVStats[i][1], statComparer(comparisonArray, CSVStats[i][5:11])))
 comparedStatsArray = np.array(comparedStatsArray, dtype=[("name", 'U30'), ('comparisonValue', 'f8')])
 
-a = np.sort(comparedStatsArray, order='comparisonValue')
-arr = np.sort(a)[::-1]
+a = np.sort(comparedStatsArray, order="comparisonValue")
 
-
-for i in range(outputLength):
-    print(arr[i])
+if isVerbose:
+    for i in range(outputLength):
+        print(str(a[len(a)-i-1]), str())
+else:
+    print(" ")
+    for i in range(outputLength):
+        print(str(i+1) + ") " + str(a[len(a) - i - 1][0]))
+    print("")
